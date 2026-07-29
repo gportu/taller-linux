@@ -5,3 +5,4 @@ Trabajos realizados con ansible durante el taller
 - Inventario
 - Playbooks 
 - Prueba
+- Prueba2
