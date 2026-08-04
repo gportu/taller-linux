@@ -1,0 +1,44 @@
+---
+- name: Initial ubuntu hardening
+  hosts: ubuntu
+  become: true
+  
+  tasks:
+
+  - name: Update installed packages
+    ansible.builtin.apt:
+      name: "*"
+      update_cache: true
+      state: latest
+    notify: Reboot servers
+  
+  - name: UFW is installed
+    ansible.builtin.apt:
+      name: ufw
+      state: present
+  
+  - name: Reset UFW to default
+    community.general.ufw:
+      state: reset
+
+  - name: Define outgoing connection policy
+    community.general.ufw:
+      direction: outgoing
+      policy: allow
+
+  - name: Definde ingoing connection policy
+    community.general.ufw:
+      direction: incoming
+      policy: deny
+
+  - name: Allow ssh connections and enable UFW
+    community.general.ufw:
+      name: OpenSSH
+      rule: allow
+      state: enabled
+
+  handlers:
+
+  - name: Reboot servers
+    ansible.builtin.reboot:
+      reboot_timeout: 300
