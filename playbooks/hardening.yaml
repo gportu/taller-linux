@@ -37,8 +37,34 @@
       rule: allow
       state: enabled
 
+  - name: fail2ban is installed
+    ansible.builtin.apt:
+      name: fail2ban
+      state: present
+
+  - name: Copy jail.local config
+    ansible.builtin.copy:
+      src: /files/jail.local
+      dest: /etc/fail2ban/jail.local
+      mode: '0600'
+      owner: root
+      group: root
+    notify: Restart fail2ban
+
+  - name: fail2ban started and enabled
+    ansible.builtin.systemd_service:
+      name: fail2ban
+      state: started
+      enabled: true
+
+
   handlers:
 
   - name: Reboot servers
     ansible.builtin.reboot:
       reboot_timeout: 300
+
+  - name: Restart fail2ban
+    ansible.builtin.systemd_service:
+      name: fail2ban
+      state: restarted
