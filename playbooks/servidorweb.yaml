@@ -1,0 +1,60 @@
+---
+  - name: Instalacion y configuracion servidores web
+    hosts: centos
+    become: true
+
+    tasks:
+
+    - name: Instalar httpd
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+
+    
+    - name: Habilitar y arrancar httpd
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+
+    - name: Instalar php
+      ansible.builtin.dnf:
+        name:
+          - php
+          - php-mysqlnd
+          - php-fpm
+        state: present
+
+    - name: Habilitar php
+      ansible.builtin.service:
+        name: php-fpm
+        state: started
+        enabled: true
+
+    - name: Instalar firewalld
+      ansible.builtin.dnf:
+        name: firewalld
+        state: present
+
+    - name: Habilitar firewalld
+      ansible.posix.firewalld:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Permitir HTTPS
+      ansible.posix.firewalld:
+        service: https
+        state: enabled
+        permanent: true
+        immediate: true
+        offline: true
+
+    - name: Permitir HTTP
+      ansible.posix.firewalld:
+        service: http
+        state: enabled
+        permanent: true
+        immediate: true
+        offline: true
+
