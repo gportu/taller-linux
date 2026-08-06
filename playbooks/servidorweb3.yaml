@@ -1,0 +1,78 @@
+---
+- name: Instalacion y configuracion servidores web
+  hosts: centos
+  become: true
+
+  vars_files:
+    - ../vars/database.yaml
+
+  tasks:
+
+    - name: Instalar firewalld
+      ansible.builtin.dnf:
+        name: firewalld
+        state: present
+
+    - name: Habilitar y arrancar firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Permitir HTTP
+      ansible.posix.firewalld:
+        service: http
+        state: enabled
+        permanent: true
+        immediate: true
+
+    - name: Permitir HTTPS
+      ansible.posix.firewalld:
+        service: https
+        state: enabled
+        permanent: true
+        immediate: true
+
+    - name: Instalar Apache
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+
+    - name: Habilitar y arrancar Apache
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+
+    - name: Instalar PHP
+      ansible.builtin.dnf:
+        name:
+          - php
+          - php-mysqlnd
+          - php-fpm
+          - python3-libsemanage
+        state: present
+
+    - name: Habilitar php-fpm
+      ansible.builtin.service:
+        name: php-fpm
+        state: started
+        enabled: true
+
+    - name: Instalar aplicacion PHP
+      ansible.builtin.template:
+        src: ../templates/cumple.j2
+        dest: /var/www/html/index.php
+        owner: apache
+        group: apache
+        mode: "0644"
+
+
+    - name: Configurar SELinux para Apache
+      ansible.posix.seboolean:
+        name: "{{ item }}"
+        state: true
+        persistent: true
+      loop:
+        - httpd_can_network_connect
+        - httpd_can_network_connect_db

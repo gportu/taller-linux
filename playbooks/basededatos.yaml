@@ -1,0 +1,80 @@
+---
+- name: Instalacion y configuracion MariaDB en Ubuntu
+  hosts: database
+  become: true
+
+  vars:
+    mariadb_root_password: "RootPassword123!"
+    database_name: "cumples"
+    database_user: "intranet"
+    database_password: "intranet123"
+
+  tasks:
+
+    - name: Actualizar repositorios
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Instalar MariaDB y dependencias
+      ansible.builtin.apt:
+        name:
+          - mariadb-server
+          - python3-pymysql
+          - ufw
+        state: present
+
+    - name: Habilitar y arrancar MariaDB
+      ansible.builtin.service:
+        name: mariadb
+        state: started
+        enabled: true
+
+    - name: Habilitar UFW
+      community.general.ufw:
+        state: enabled
+
+    - name: Permitir conexiones MariaDB
+      community.general.ufw:
+        rule: allow
+        port: "3306"
+        proto: tcp
+
+    - name: Establecer contraseña root MariaDB
+      community.mysql.mysql_user:
+        name: root
+        password: "{{ mariadb_root_password }}"
+        host: localhost
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Crear base de datos
+      community.mysql.mysql_db:
+        name: "{{ database_name }}"
+        state: present
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+
+    - name: Crear usuario para aplicacion web
+      community.mysql.mysql_user:
+        name: "{{ database_user }}"
+        password: "{{ database_password }}"
+        host: "%"
+        priv:
+          "{{ database_name }}.*": "ALL"
+        state: present
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+
+    - name: Copiar script SQL
+      ansible.builtin.copy:
+        src: ../files/cumples.sql
+        dest: /tmp/cumples.sql
+        mode: "0644"
+
+    - name: Importar datos de cumpleaños
+      community.mysql.mysql_db:
+        name: "{{ database_name }}"
+        state: import
+        target: /tmp/cumples.sql
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
