@@ -3,6 +3,9 @@
     hosts: centos
     become: true
 
+    vars_files:
+      ../vars/database.yaml
+
     tasks:
 
     - name: Instalar httpd
@@ -13,9 +16,39 @@
     
     - name: Habilitar y arrancar httpd
       ansible.builtin.service:
-        name: httpd
+        service: httpd
         state: started
         enabled: true
+
+    - name: Permitir HTTP
+      ansible.posix.firewalld:
+        service: http
+        state: enabled
+        permanent: true
+        immediate: true
+        offline: true
+
+    - name: Install php application
+      ansible.builtin.template:
+        src: ../templates/cumple.j2
+        dest: /var/www/html/index.php
+        mode: '0644'
+        owner: apache
+        group: apache
+
+    - name: Set selinux booleans for database access from apache
+      ansible.posix.seboolean:
+        name: "{{ item }}"
+        state: true
+        persistent: true
+      loop:
+        - httpd_can_network_connect
+        - httpd_can_network_connect_db
+
+
+          # name: httpd
+          # state: started
+          #enabled: true
 
     - name: Instalar php
       ansible.builtin.dnf:
@@ -57,4 +90,21 @@
         permanent: true
         immediate: true
         offline: true
+
+    - name: Install php application
+      ansible.builtin.template:
+        src: ../templates/cumple.j2
+        dest: /var/www/html/index.php
+        mode: '0644'
+        owner: apache
+        group: apache
+
+    - name: Set selinux booleans for database access from apache
+      ansible.posix.seboolean:
+        name: "{{ item }}"
+        state: true
+        persistent: true
+      loop:
+        - httpd_can_network_connect
+        - httpd_can_network_connect_db
 
