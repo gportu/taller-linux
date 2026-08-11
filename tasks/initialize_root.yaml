@@ -1,0 +1,14 @@
+---
+- name: Set mysql root password
+  community.mysql.mysql_user:
+    login_user: root
+    login_password: ""
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    check_implicit_admin: true
+    name: root
+    host: "{{ item }}"
+    password: "{{ DB_ROOT_PW }}"
+    state: present
+  loop:
+    - 127.0.0.1
+    - localhost

@@ -2,12 +2,9 @@
 - name: Instalacion y configuracion MariaDB Ubuntu
   hosts: database
   become: true
-
   vars_files:
     - ../vars/database.yaml
-
   tasks:
-
     - name: Instalar MariaDB y dependencias
       ansible.builtin.apt:
         name:
@@ -36,6 +33,26 @@
         port: "3306"
         proto: tcp
 
+    - name: Verifica que la contrasenia de root exista
+      community.mysql.mysql_user:
+        login_user: root
+        login_password: ""
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        check_implicit_admin: true
+        name: root
+        host: localhost
+      register: mysql_root_check
+      ignore_errors: true
+
+    - name: Destranca el estado de la contrasenia
+      ansible.builtin.debug:
+        msg: "La password de root no esta inicializada"
+      when: mysql_root_check.failed is false
+
+    - name: Genera password de root si no existe
+      include_tasks: ../tasks/initialize_root.yaml
+      when: mysql_root_check.failed is false
+
     - name: Copiar script SQL
       ansible.builtin.copy:
         src: ../files/cumples.sql
@@ -48,6 +65,7 @@
         state: import
         target: /tmp/cumples.sql
         login_user: root
+        login_password: "{{ DB_ROOT_PW }}"
         login_unix_socket: /var/run/mysqld/mysqld.sock
 
     - name: Crear usuario para la aplicacion web
@@ -58,10 +76,9 @@
         priv: "{{ DB_DBASE }}.*:ALL"
         state: present
         login_user: root
+        login_password: "{{ DB_ROOT_PW }}"
         login_unix_socket: /var/run/mysqld/mysqld.sock
-
   handlers:
-
     - name: Reiniciar MariaDB
       ansible.builtin.service:
         name: mariadb

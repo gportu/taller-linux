@@ -5,7 +5,7 @@ if ($conexion->connect_error) {
     die("Error de conexión: " . $conexion->connect_error);
 }
 
-$resultado = $conexion->query("SELECT nombre, fecha FROM cumpleaños ORDER BY MONTH(fecha), DAY(fecha)");
+$resultado = $conexion->query("SELECT nombre, fecha FROM cumpleanios ORDER BY MONTH(fecha), DAY(fecha)");
 
 echo "<h1>Lista de Cumpleaños</h1>";
 echo "<table border='1'><tr><th>Nombre</th><th>Fecha</th></tr>";

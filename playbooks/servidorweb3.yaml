@@ -76,3 +76,10 @@
       loop:
         - httpd_can_network_connect
         - httpd_can_network_connect_db
+      notify: Reiniciar Apache
+
+  handlers:
+    - name: Reiniciar Apache
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
