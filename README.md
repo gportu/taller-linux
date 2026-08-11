@@ -40,8 +40,6 @@ taller-linux/
 │       └── linux.yaml           # Variables comunes al grupo "linux"
 ├── playbooks/
 │   ├── hardening.yaml           # Hardening inicial de Ubuntu (UFW + fail2ban)
-│   ├── basededatos.yaml         # 1ra versión del playbook de base de datos
-│   ├── basededatos2.yaml        # 2da versión (usa vars_files)
 │   ├── basededatos3.yaml        # Versión final (idempotente, vault, tasks/)
 │   └── servidorweb3.yaml        # Instalación y configuración del servidor web
 ├── tasks/
