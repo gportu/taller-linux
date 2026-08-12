@@ -42,7 +42,7 @@ taller-linux/
 │   ├── hardening.yaml           # Hardening inicial de Ubuntu (UFW + fail2ban)
 │   ├── basededatos3.yaml        # Versión final (idempotente, vault, tasks/)
 │   └── servidorweb3.yaml        # Instalación y configuración del servidor web
-│   └── site.yaml        # Playbook integrador
+│   └── site.yaml                # Playbook integrador
 ├── tasks/
 │   └── initialize_root.yaml     # Tarea reutilizable: fija password root de MariaDB
 ├── templates/
