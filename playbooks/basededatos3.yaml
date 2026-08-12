@@ -61,7 +61,7 @@
         dest: /tmp/cumples.sql
         mode: "0644"
 
-   - name: Obtener las bases de datos existentes en el servidor
+    - name: Obtener las bases de datos existentes en el servidor
       community.mysql.mysql_info:
         login_user: root
         login_password: "{{ DB_ROOT_PW }}"
