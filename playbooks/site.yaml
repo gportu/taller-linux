@@ -1,0 +1,11 @@
+---
+# Playbook integrador (site.yaml)
+
+- name: 1. Hardening inicial del servidor Ubuntu
+  ansible.builtin.import_playbook: hardening.yaml
+
+- name: 2. Instalacion y configuracion de la base de datos
+  ansible.builtin.import_playbook: basededatos3.yaml
+
+- name: 3. Instalacion y configuracion del servidor web
+  ansible.builtin.import_playbook: servidorweb3.yaml
