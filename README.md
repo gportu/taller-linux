@@ -42,6 +42,7 @@ taller-linux/
 │   ├── hardening.yaml           # Hardening inicial de Ubuntu (UFW + fail2ban)
 │   ├── basededatos3.yaml        # Versión final (idempotente, vault, tasks/)
 │   └── servidorweb3.yaml        # Instalación y configuración del servidor web
+│   └── site.yaml        # Playbook integrador
 ├── tasks/
 │   └── initialize_root.yaml     # Tarea reutilizable: fija password root de MariaDB
 ├── templates/
@@ -107,7 +108,7 @@ Se aplica sobre el grupo `ubuntu` (`ubuntu01`, `ubuntu02`):
 5. Arranca y habilita el servicio `fail2ban`.
 
 ```bash
-ansible-playbook -i inventory/hosts.ini playbooks/hardening.yaml
+ansible-playbook -i inventory/hosts.ini playbooks/hardening.yaml --ask-become-pass --ask-vault-pass
 ```
 
 > Al aplicar `policy: deny` en el tráfico entrante y solo permitir SSH, cualquier otro puerto (por ejemplo 3306 para MariaDB) queda bloqueado hasta que el playbook de base de datos abra el puerto correspondiente en UFW. Por eso conviene correr `hardening.yaml` **antes** que `basededatos3.yaml`.
@@ -119,13 +120,13 @@ Se aplica sobre el grupo `database` (host `ubuntu-db`). Usa las variables cifrad
 1. Instala `mariadb-server`, `python3-pymysql` y `ufw`.
 2. Inicia y habilita el servicio `mariadb`.
 3. Configura `bind-address = 0.0.0.0` en `50-server.cnf` para aceptar conexiones remotas (reinicia MariaDB solo si hubo cambios, vía handler).
-4. Abre el puerto `3306/tcp` en UFW.
+4. Abre el puerto `3306/tcp` en UFW. Solo para servidores de aplicación web
 5. Verifica si la contraseña de `root` de MariaDB ya está inicializada (login por socket unix sin password). Si **no** lo está, delega en `tasks/initialize_root.yaml`, que fija `DB_ROOT_PW` para `root@localhost` y `root@127.0.0.1`.
 6. Copia `files/cumples.sql` al servidor e importa la base `cumples` (tabla `cumpleanios`, con datos de ejemplo).
 7. Crea el usuario `DB_USER` (`intranet`) con privilegios `ALL` sobre `DB_DBASE`, accesible desde cualquier host (`%`).
 
 ```bash
-ansible-playbook -i inventory/hosts.ini playbooks/basededatos3.yaml --ask-vault-pass
+ansible-playbook -i inventory/hosts.ini playbooks/basededatos3.yaml --ask-vault-pass --ask-become-pass
 ```
 
 **Comportamiento esperado:**
@@ -146,20 +147,17 @@ Se aplica sobre el grupo `centos` (`centos01`, `centos02`), también usando `var
 6. Habilita los booleanos de **SELinux** `httpd_can_network_connect` y `httpd_can_network_connect_db` para que Apache/PHP puedan conectarse a la base remota (reinicia Apache vía handler si hubo cambios).
 
 ```bash
-ansible-playbook -i inventory/hosts.ini playbooks/servidorweb3.yaml --ask-vault-pass
+ansible-playbook -i inventory/hosts.ini playbooks/servidorweb3.yaml --ask-vault-pass --ask-become-pass
 ```
+### 4. `playbooks/site.yaml` - Playbook integrador
 
-## Orden de ejecución recomendado
+Ejecuta en orden los playbooks (Hardening, basededatos3 y servidorweb)
+
+## Comando de ejecución
 
 ```bash
-# 1. Hardening de los servidores Ubuntu (UFW + fail2ban)
-ansible-playbook -i inventory/hosts.ini playbooks/hardening.yaml
 
-# 2. Base de datos (MariaDB + carga de datos + usuario de la app)
-ansible-playbook -i inventory/hosts.ini playbooks/basededatos3.yaml --ask-vault-pass
-
-# 3. Servidor web (Apache + PHP + despliegue de la app)
-ansible-playbook -i inventory/hosts.ini playbooks/servidorweb3.yaml --ask-vault-pass
+ansible-playbook -i inventory/hosts.ini playbooks/site.yaml --ask-vault-pass --ask-become-pass
 ```
 
 El servidor web depende de que la base de datos y el usuario `intranet` ya existan, por lo que `basededatos3.yaml` debe correr antes que `servidorweb3.yaml`.
