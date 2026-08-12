@@ -27,11 +27,13 @@
         line: 'bind-address = 0.0.0.0'
       notify: Reiniciar MariaDB
 
-    - name: Permitir puerto MariaDB en UFW
+    - name: Permitir puerto MariaDB en UFW solo desde el servidor web
       community.general.ufw:
         rule: allow
         port: "3306"
         proto: tcp
+        src: "{{ hostvars[item].ansible_host }}"
+      loop: "{{ groups['centos'] }}"
 
     - name: Verifica que la contrasenia de root exista
       community.mysql.mysql_user:
@@ -59,7 +61,15 @@
         dest: /tmp/cumples.sql
         mode: "0644"
 
-    - name: Importar base de datos desde SQL
+   - name: Obtener las bases de datos existentes en el servidor
+      community.mysql.mysql_info:
+        login_user: root
+        login_password: "{{ DB_ROOT_PW }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        filter: databases
+      register: mariadb_info
+ 
+    - name: Importar base de datos desde SQL (solo si la base aun no existe)
       community.mysql.mysql_db:
         name: "{{ DB_DBASE }}"
         state: import
@@ -67,7 +77,7 @@
         login_user: root
         login_password: "{{ DB_ROOT_PW }}"
         login_unix_socket: /var/run/mysqld/mysqld.sock
-
+      when: DB_DBASE not in mariadb_info.databases
     - name: Crear usuario para la aplicacion web
       community.mysql.mysql_user:
         name: "{{ DB_USER }}"
